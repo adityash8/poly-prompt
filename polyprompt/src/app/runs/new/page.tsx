@@ -115,12 +115,12 @@ export default function NewRunPage() {
               id="prompt"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              placeholder="Enter your prompt here... You can use variables like {{product}} or {{tone}}"
+              placeholder="Enter your prompt here... You can use variables like {product} or {tone}"
               rows={6}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
             />
             <p className="text-sm text-gray-500 mt-1">
-              Use {{variable}} syntax for dynamic content
+              Use variable syntax for dynamic content
             </p>
           </div>
 
