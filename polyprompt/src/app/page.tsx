@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
@@ -9,9 +11,11 @@ export default function HomePage() {
           One prompt. Every LLM. Side-by-side.
         </p>
         <div className="space-y-4">
-          <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
-            Get Started
-          </button>
+          <Link href="/runs">
+            <button className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+              Get Started
+            </button>
+          </Link>
         </div>
       </div>
     </div>
