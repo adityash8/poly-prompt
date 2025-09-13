@@ -40,14 +40,20 @@ export default function NewRunPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to save run");
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 503) {
+          alert("Setup required: Please configure Supabase environment variables. Visit /setup for instructions.");
+          return;
+        }
+        throw new Error(errorData.message || "Failed to save run");
       }
 
       const run = await response.json();
       router.push(`/runs/${run.id}`);
     } catch (error) {
       console.error("Error saving run:", error);
-      alert("Failed to save run. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Failed to save run. Please try again.";
+      alert(errorMessage);
     }
   };
 
@@ -72,7 +78,12 @@ export default function NewRunPage() {
       });
 
       if (!createResponse.ok) {
-        throw new Error("Failed to create run");
+        const errorData = await createResponse.json().catch(() => ({}));
+        if (createResponse.status === 503) {
+          alert("Setup required: Please configure Supabase and OpenRouter environment variables. Visit /setup for instructions.");
+          return;
+        }
+        throw new Error(errorData.message || "Failed to create run");
       }
 
       const run = await createResponse.json();
@@ -82,13 +93,19 @@ export default function NewRunPage() {
       });
 
       if (!executeResponse.ok) {
-        throw new Error("Failed to execute run");
+        const errorData = await executeResponse.json().catch(() => ({}));
+        if (executeResponse.status === 503) {
+          alert("Setup required: Please configure OpenRouter API key. Visit /setup for instructions.");
+          return;
+        }
+        throw new Error(errorData.message || "Failed to execute run");
       }
 
       router.push(`/runs/${run.id}`);
     } catch (error) {
       console.error("Error running prompt:", error);
-      alert("Failed to run prompt. Please try again.");
+      const errorMessage = error instanceof Error ? error.message : "Failed to run prompt. Please try again.";
+      alert(errorMessage);
     } finally {
       setIsRunning(false);
     }
@@ -165,6 +182,15 @@ export default function NewRunPage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>First time?</strong> Make sure to configure your environment variables first. 
+              <Link href="/setup" className="text-blue-600 hover:text-blue-700 underline ml-1">
+                Check setup status →
+              </Link>
+            </p>
           </div>
 
           <div className="flex gap-3">
