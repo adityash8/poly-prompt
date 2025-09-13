@@ -57,6 +57,9 @@ export default function SetupPage() {
           <h1 className="text-2xl font-bold text-gray-900 mb-6">
             Poly Prompt Setup Status
           </h1>
+          <p className="text-sm text-gray-500 mb-6">
+            Check the configuration status of your Poly Prompt deployment
+          </p>
           
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 border rounded-lg">
