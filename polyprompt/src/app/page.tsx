@@ -16,6 +16,11 @@ export default function HomePage() {
               Get Started
             </button>
           </Link>
+          <Link href="/setup">
+            <button className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors">
+              Setup Status
+            </button>
+          </Link>
         </div>
       </div>
     </div>
