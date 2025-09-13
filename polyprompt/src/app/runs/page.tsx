@@ -1,42 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, Search, Clock, Zap } from 'lucide-react'
+import { Run } from '@/types'
 
-// Mock data for demonstration
-const mockRuns = [
-  {
-    id: '1',
-    title: 'Email Subject Line Generator',
-    prompt: 'Write a compelling email subject line for a SaaS product launch',
-    status: 'completed',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    models: ['GPT-4o', 'Claude 3.5', 'Gemini 1.5'],
-  },
-  {
-    id: '2',
-    title: 'Code Review Assistant',
-    prompt: 'Review this React component for best practices and potential improvements',
-    status: 'running',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    models: ['GPT-4o', 'Claude 3.5'],
-  },
-  {
-    id: '3',
-    title: 'Marketing Copy Generator',
-    prompt: 'Create a 100-word marketing copy for a productivity app',
-    status: 'draft',
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    models: [],
-  },
-]
+// Remove mockRuns
 
 export default function RunsPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedStatus, setSelectedStatus] = useState('all')
+  const [runs, setRuns] = useState<Run[]>([])
 
-  const filteredRuns = mockRuns.filter(run => {
+  useEffect(() => {
+    const fetchRuns = async () => {
+      try {
+        const response = await fetch('/api/runs')
+        if (!response.ok) throw new Error('Failed to fetch runs')
+        const data = await response.json()
+        setRuns(data)
+      } catch (error) {
+        console.error('Error fetching runs:', error)
+        // Add toast or alert
+      }
+    }
+    fetchRuns()
+  }, [])
+
+  const filteredRuns = runs.filter(run => {
     const matchesSearch = run.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          run.prompt.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesStatus = selectedStatus === 'all' || run.status === selectedStatus

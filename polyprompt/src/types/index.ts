@@ -10,6 +10,7 @@ export interface Run {
   is_public: boolean;
   variables?: Record<string, string>;
   share_id?: string;
+  models: string[];
 }
 
 export interface Eval {

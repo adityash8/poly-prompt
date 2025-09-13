@@ -2,92 +2,86 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Play, Copy, Share2, Edit } from 'lucide-react'
+import { ArrowLeft, Play, Copy, Share2 } from 'lucide-react'
 import Link from 'next/link'
+import { Run, Eval } from '@/types'
 
-// Mock data for demonstration
-const mockResults = {
-  '1': {
-    id: '1',
-    title: 'Email Subject Line Generator',
-    prompt: 'Write a compelling email subject line for a SaaS product launch',
-    status: 'completed',
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-    results: [
-      {
-        model: 'GPT-4o',
-        output: '🚀 Launch Alert: Transform Your Workflow with [Product Name] - See How Teams Save 10+ Hours/Week',
-        latency: 1200,
-        tokens: 45,
-        cost: 0.0012,
-      },
-      {
-        model: 'Claude 3.5 Sonnet',
-        output: 'Introducing [Product Name]: The SaaS Solution That\'s Revolutionizing How Teams Collaborate',
-        latency: 800,
-        tokens: 38,
-        cost: 0.0009,
-      },
-      {
-        model: 'Gemini 1.5 Pro',
-        output: 'Ready to Supercharge Your Productivity? [Product Name] Launches Today - Limited Time Offer Inside',
-        latency: 950,
-        tokens: 42,
-        cost: 0.0011,
-      },
-    ],
-  },
-  '2': {
-    id: '2',
-    title: 'Code Review Assistant',
-    prompt: 'Review this React component for best practices and potential improvements',
-    status: 'running',
-    created_at: new Date(Date.now() - 7200000).toISOString(),
-    results: [],
-  },
-  '3': {
-    id: '3',
-    title: 'Marketing Copy Generator',
-    prompt: 'Create a 100-word marketing copy for a productivity app',
-    status: 'draft',
-    created_at: new Date(Date.now() - 86400000).toISOString(),
-    results: [],
-  },
-}
+// Remove mockResults
 
 export default function RunDetailPage() {
   const params = useParams()
   const router = useRouter()
   const runId = params.id as string
   
-  const [run, setRun] = useState(mockResults[runId as keyof typeof mockResults] || null)
+  const [run, setRun] = useState<Run | null>(null)
+  const [evals, setEvals] = useState<Eval[]>([])
   const [isRunning, setIsRunning] = useState(false)
 
   useEffect(() => {
-    if (!run) {
-      // Handle run not found
-      router.push('/runs')
+    const fetchData = async () => {
+      try {
+        const runResponse = await fetch(`/api/runs/${runId}`)
+        if (runResponse.ok) {
+          setRun(await runResponse.json())
+        } else if (runResponse.status === 404) {
+          router.push('/runs')
+          return
+        }
+
+        const evalsResponse = await fetch(`/api/runs/${runId}/evals`)
+        if (evalsResponse.ok) {
+          setEvals(await evalsResponse.json())
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+      }
     }
-  }, [run, router])
+
+    fetchData()
+  }, [runId, router])
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | undefined
+    if (run?.status === 'running') {
+      interval = setInterval(async () => {
+        const runResponse = await fetch(`/api/runs/${runId}`)
+        if (runResponse.ok) {
+          const updatedRun = await runResponse.json()
+          setRun(updatedRun)
+          if (updatedRun.status !== 'running') {
+            const evalsResponse = await fetch(`/api/runs/${runId}/evals`)
+            if (evalsResponse.ok) setEvals(await evalsResponse.json())
+          }
+        }
+      }, 2000)
+    }
+    return () => clearInterval(interval)
+  }, [run?.status, runId])
 
   if (!run) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Run not found</h2>
-          <Link href="/runs">
-            <button className="text-blue-600 hover:text-blue-700">Back to runs</button>
-          </Link>
-        </div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     )
   }
 
   const handleRunAgain = async () => {
     setIsRunning(true)
-    await new Promise(resolve => setTimeout(resolve, 3000))
-    setIsRunning(false)
-    // In a real app, this would trigger the API calls
+    try {
+      const response = await fetch(`/api/runs/${runId}/run`, { method: 'POST' })
+      if (!response.ok) throw new Error('Failed to run')
+      // Refetch data
+      const runResponse = await fetch(`/api/runs/${runId}`)
+      setRun(await runResponse.json())
+      const evalsResponse = await fetch(`/api/runs/${runId}/evals`)
+      setEvals(await evalsResponse.json())
+    } catch (error) {
+      console.error('Error running again:', error)
+      alert('Failed to run again. Please try later.')
+    } finally {
+      setIsRunning(false)
+    }
   }
 
   const handleCopy = (text: string) => {
@@ -158,17 +152,17 @@ export default function RunDetailPage() {
         </div>
 
         {/* Results */}
-        {run.status === 'completed' && run.results.length > 0 ? (
+        {run.status === 'completed' && evals.length > 0 ? (
           <div className="space-y-6">
-            {run.results.map((result, index) => (
+            {evals.map((result, index) => (
               <div key={index} className="bg-white rounded-lg shadow">
                 <div className="p-6 border-b">
                   <div className="flex items-center justify-between">
                     <h3 className="text-lg font-semibold text-gray-900">{result.model}</h3>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>{result.latency}ms</span>
-                      <span>{result.tokens} tokens</span>
-                      <span>${result.cost.toFixed(4)}</span>
+                      <span>{result.latency_ms}ms</span>
+                      <span>{result.tokens_in + result.tokens_out} tokens</span>
+                      <span>${result.cost_usd.toFixed(4)}</span>
                       <button
                         onClick={() => handleCopy(result.output)}
                         className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -179,9 +173,15 @@ export default function RunDetailPage() {
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-gray-800 whitespace-pre-wrap">{result.output}</p>
-                  </div>
+                  {result.error ? (
+                    <div className="bg-red-50 rounded-lg p-4 text-red-800">
+                      Error: {result.error}
+                    </div>
+                  ) : (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-gray-800 whitespace-pre-wrap">{result.output}</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

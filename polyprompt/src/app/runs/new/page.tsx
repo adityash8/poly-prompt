@@ -31,47 +31,68 @@ export default function NewRunPage() {
     )
   }
 
-  const handleSave = () => {
-    const run = {
-      id: Date.now().toString(),
-      title: title || 'Untitled Run',
-      prompt,
-      status: 'draft',
-      models: selectedModels,
-      created_at: new Date().toISOString(),
+  const handleSave = async () => {
+    try {
+      const response = await fetch("/api/runs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, prompt, models: selectedModels }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save run");
+      }
+
+      const run = await response.json();
+      router.push(`/runs/${run.id}`);
+    } catch (error) {
+      console.error("Error saving run:", error);
+      alert("Failed to save run. Please try again.");
     }
-    
-    console.log('Saving run:', run)
-    router.push(`/runs/${run.id}`)
-  }
+  };
 
   const handleRun = async () => {
     if (!prompt.trim()) {
-      alert('Please enter a prompt')
-      return
-    }
-    
-    if (selectedModels.length === 0) {
-      alert('Please select at least one model')
-      return
+      alert("Please enter a prompt");
+      return;
     }
 
-    setIsRunning(true)
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    const run = {
-      id: Date.now().toString(),
-      title: title || 'Untitled Run',
-      prompt,
-      status: 'completed',
-      models: selectedModels,
-      created_at: new Date().toISOString(),
+    if (selectedModels.length === 0) {
+      alert("Please select at least one model");
+      return;
     }
-    
-    console.log('Running prompt:', run)
-    setIsRunning(false)
-    router.push(`/runs/${run.id}`)
-  }
+
+    setIsRunning(true);
+
+    try {
+      const createResponse = await fetch("/api/runs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title, prompt, models: selectedModels }),
+      });
+
+      if (!createResponse.ok) {
+        throw new Error("Failed to create run");
+      }
+
+      const run = await createResponse.json();
+
+      const executeResponse = await fetch(`/api/runs/${run.id}/run`, {
+        method: "POST",
+      });
+
+      if (!executeResponse.ok) {
+        throw new Error("Failed to execute run");
+      }
+
+      router.push(`/runs/${run.id}`);
+    } catch (error) {
+      console.error("Error running prompt:", error);
+      alert("Failed to run prompt. Please try again.");
+    } finally {
+      setIsRunning(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
