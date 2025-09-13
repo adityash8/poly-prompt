@@ -3,8 +3,9 @@ import { cookies } from "next/headers";
 import { NextResponse, NextRequest } from "next/server";
 
 export async function GET() {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  try {
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -21,11 +22,16 @@ export async function GET() {
   }
 
   return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error in GET /api/runs:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
+  try {
+    const supabase = createRouteHandlerClient({ cookies });
+    const { data: { session } } = await supabase.auth.getSession();
 
   if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -56,4 +62,8 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error in POST /api/runs:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
