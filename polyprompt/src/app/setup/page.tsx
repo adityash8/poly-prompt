@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 export default function SetupPage() {
   const [status, setStatus] = useState({
@@ -20,7 +21,7 @@ export default function SetupPage() {
         } else {
           setStatus(prev => ({ ...prev, supabase: 'configured' }))
         }
-      } catch (error) {
+      } catch {
         setStatus(prev => ({ ...prev, supabase: 'error' }))
       }
 
@@ -94,18 +95,18 @@ export default function SetupPage() {
           )}
 
           <div className="mt-6 flex gap-3">
-            <a 
+            <Link 
               href="/"
               className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               Back to Home
-            </a>
-            <a 
+            </Link>
+            <Link 
               href="/runs"
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Try App
-            </a>
+            </Link>
           </div>
         </div>
       </div>
