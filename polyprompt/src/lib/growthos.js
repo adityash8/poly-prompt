@@ -44,7 +44,7 @@ export const initGrowthOS = (apiKey = 'phc_Te80oSaTxThLruEeodFYH9uzlSR8vFkBrMzYP
 function trackBusinessEvents() {
   // Auto-track form submissions (signups)
   document.addEventListener('submit', (e) => {
-    const form = e.target as HTMLFormElement;
+    const form = e.target;
     if (form.action.includes('signup') || form.id.includes('signup')) {
       posthog.capture('signup_attempt');
     }
@@ -52,7 +52,7 @@ function trackBusinessEvents() {
 
   // Auto-track CTA clicks
   document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
+    const target = e.target;
     if (target.tagName === 'BUTTON' || target.classList.contains('cta')) {
       posthog.capture('cta_click', {
         text: target.textContent,
