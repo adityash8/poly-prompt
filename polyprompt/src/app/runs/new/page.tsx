@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Play, Save } from 'lucide-react'
 import Link from 'next/link'
@@ -16,7 +16,7 @@ const AVAILABLE_MODELS = [
   { id: 'mistral-medium', name: 'Mistral Medium', provider: 'Mistral' },
 ]
 
-export default function NewRunPage() {
+function NewRunPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [title, setTitle] = useState('')
@@ -252,5 +252,13 @@ export default function NewRunPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function NewRunPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <NewRunPageContent />
+    </Suspense>
   )
 }
