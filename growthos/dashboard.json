@@ -1,0 +1,37 @@
+{
+  "name": "GrowthOS Dashboard",
+  "description": "Pre-built growth metrics - no vanity allowed",
+  "dashboards": [
+    {
+      "name": "Activation Funnel",
+      "metrics": [
+        "signup_to_onboarding_rate",
+        "onboarding_completion_rate",
+        "time_to_first_value"
+      ]
+    },
+    {
+      "name": "Revenue Metrics",
+      "metrics": [
+        "trial_to_paid_conversion",
+        "monthly_recurring_revenue",
+        "customer_lifetime_value"
+      ]
+    },
+    {
+      "name": "Growth Loops",
+      "metrics": [
+        "referral_conversion_rate",
+        "viral_coefficient",
+        "organic_vs_referred_signups"
+      ]
+    }
+  ],
+  "alerts": [
+    {
+      "name": "Activation Drop",
+      "condition": "signup_to_onboarding_rate < 0.7",
+      "action": "slack_ping"
+    }
+  ]
+}

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, Play, Save } from 'lucide-react'
 import Link from 'next/link'
 
@@ -18,10 +18,40 @@ const AVAILABLE_MODELS = [
 
 export default function NewRunPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [title, setTitle] = useState('')
   const [prompt, setPrompt] = useState('')
   const [selectedModels, setSelectedModels] = useState<string[]>([])
   const [isRunning, setIsRunning] = useState(false)
+
+  // Handle template pre-filling
+  useEffect(() => {
+    const templateTitle = searchParams.get('title')
+    const templatePrompt = searchParams.get('prompt')
+    const templateVariables = searchParams.get('variables')
+
+    if (templateTitle) setTitle(templateTitle)
+    if (templatePrompt) {
+      let processedPrompt = templatePrompt
+
+      // Replace variables with actual values if provided
+      if (templateVariables) {
+        try {
+          const variables = JSON.parse(templateVariables)
+          Object.entries(variables).forEach(([key, value]) => {
+            processedPrompt = processedPrompt.replace(
+              new RegExp(`{{${key}}}`, 'g'),
+              value as string
+            )
+          })
+        } catch (error) {
+          console.error('Failed to parse template variables:', error)
+        }
+      }
+
+      setPrompt(processedPrompt)
+    }
+  }, [searchParams])
 
   const handleModelToggle = (modelId: string) => {
     setSelectedModels(prev => 

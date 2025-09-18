@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { ArrowLeft, Play, Copy, Share2 } from 'lucide-react'
+import { ArrowLeft, Play, Copy, Share2, Download } from 'lucide-react'
 import Link from 'next/link'
 import { Run, Eval } from '@/types'
+import { useToast } from '@/hooks/use-toast'
 
 // Remove mockResults
 
@@ -16,13 +17,22 @@ export default function RunDetailPage() {
   const [run, setRun] = useState<Run | null>(null)
   const [evals, setEvals] = useState<Eval[]>([])
   const [isRunning, setIsRunning] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [isSharing, setIsSharing] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const runResponse = await fetch(`/api/runs/${runId}`)
         if (runResponse.ok) {
-          setRun(await runResponse.json())
+          const runData = await runResponse.json()
+          setRun(runData)
+
+          // Set share URL if run is already shared
+          if (runData.share_id) {
+            setShareUrl(`${window.location.origin}/shared/${runData.share_id}`)
+          }
         } else if (runResponse.status === 404) {
           router.push('/runs')
           return
@@ -84,9 +94,128 @@ export default function RunDetailPage() {
     }
   }
 
-  const handleCopy = (text: string) => {
-    navigator.clipboard.writeText(text)
-    // You could add a toast notification here
+  const handleCopy = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      toast({
+        title: "Copied!",
+        description: "Text copied to clipboard",
+        variant: "success",
+      })
+    } catch (error) {
+      toast({
+        title: "Failed to copy",
+        description: "Please try again",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleShare = async () => {
+    if (!run) return
+
+    setIsSharing(true)
+    try {
+      if (shareUrl) {
+        // Copy existing share URL
+        await navigator.clipboard.writeText(shareUrl)
+        toast({
+          title: "Share link copied!",
+          description: "Anyone with this link can view your run",
+          variant: "success",
+        })
+      } else {
+        // Create new share link
+        const response = await fetch(`/api/runs/${runId}/share`, {
+          method: 'POST'
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to create share link')
+        }
+
+        const data = await response.json()
+        setShareUrl(data.shareUrl)
+        setRun({ ...run, is_public: true, share_id: data.shareId })
+
+        await navigator.clipboard.writeText(data.shareUrl)
+        toast({
+          title: "Share link created!",
+          description: "Link copied to clipboard. Anyone can now view this run.",
+          variant: "success",
+        })
+      }
+    } catch (error) {
+      console.error('Error creating share link:', error)
+      toast({
+        title: "Failed to create share link",
+        description: "Please try again",
+        variant: "destructive",
+      })
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
+  const handleUnshare = async () => {
+    if (!run || !shareUrl) return
+
+    try {
+      const response = await fetch(`/api/runs/${runId}/share`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to remove share link')
+      }
+
+      setShareUrl(null)
+      setRun({ ...run, is_public: false, share_id: undefined })
+      toast({
+        title: "Share link removed",
+        description: "Your run is now private",
+        variant: "success",
+      })
+    } catch (error) {
+      console.error('Error removing share link:', error)
+      toast({
+        title: "Failed to remove share link",
+        description: "Please try again",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleExport = async (format: 'json' | 'csv') => {
+    try {
+      const response = await fetch(`/api/runs/${runId}/export?format=${format}`)
+      if (!response.ok) {
+        throw new Error('Failed to export run')
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `poly-prompt-${run?.title?.replace(/[^a-zA-Z0-9]/g, '-') || 'run'}.${format}`
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: "Export successful!",
+        description: `Run exported as ${format.toUpperCase()}`,
+        variant: "success",
+      })
+    } catch (error) {
+      console.error('Error exporting run:', error)
+      toast({
+        title: "Export failed",
+        description: "Please try again",
+        variant: "destructive",
+      })
+    }
   }
 
   const formatRelativeTime = (date: string) => {
@@ -134,9 +263,62 @@ export default function RunDetailPage() {
                   </>
                 )}
               </button>
-              <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Share2 className="h-5 w-5" />
-              </button>
+
+              {/* Share Button */}
+              <div className="relative">
+                <button
+                  onClick={handleShare}
+                  disabled={isSharing}
+                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors flex items-center gap-2"
+                >
+                  {isSharing ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Share2 className="h-4 w-4" />
+                      {shareUrl ? 'Copy Link' : 'Share'}
+                    </>
+                  )}
+                </button>
+                {shareUrl && (
+                  <button
+                    onClick={handleUnshare}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600 transition-colors"
+                    title="Remove share link"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* Export Button */}
+              {run?.status === 'completed' && evals.length > 0 && (
+                <div className="relative group">
+                  <button className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Export
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                    <div className="py-1 min-w-[120px]">
+                      <button
+                        onClick={() => handleExport('json')}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
+                      >
+                        JSON
+                      </button>
+                      <button
+                        onClick={() => handleExport('csv')}
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 text-sm"
+                      >
+                        CSV
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

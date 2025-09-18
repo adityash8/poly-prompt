@@ -1,0 +1,51 @@
+# GrowthOS Events Schema - Business KPIs only
+# Auto-generated - edit carefully
+
+events:
+  # Authentication & Onboarding
+  - name: user_signup
+    description: User completed registration
+    properties:
+      source: string # organic, referral, ads
+      plan: string # free, starter, pro
+
+  - name: onboarding_completed
+    description: User finished onboarding flow
+    properties:
+      steps_completed: number
+      time_to_complete: number
+
+  # Revenue Events
+  - name: subscription_created
+    description: User started paid subscription
+    properties:
+      plan: string
+      amount: number
+      currency: string
+
+  - name: payment_completed
+    description: Successful payment processed
+    properties:
+      amount: number
+      currency: string
+      product: string
+
+  # Growth Events
+  - name: referral_sent
+    description: User sent referral invite
+    properties:
+      channel: string # email, social, link
+      recipient_count: number
+
+  - name: feature_activated
+    description: User used key feature for first time
+    properties:
+      feature_name: string
+      time_to_activation: number
+
+# Rejected vanity metrics (auto-dropped):
+# - page_view
+# - total_sessions
+# - bounce_rate
+# - time_on_site
+# - scroll_depth
