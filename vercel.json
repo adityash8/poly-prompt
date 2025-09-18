@@ -1,7 +1,0 @@
-{
-  "buildCommand": "cd polyprompt && npm run build",
-  "outputDirectory": "polyprompt/.next",
-  "installCommand": "cd polyprompt && npm install",
-  "framework": "nextjs",
-  "rootDirectory": "polyprompt"
-}
