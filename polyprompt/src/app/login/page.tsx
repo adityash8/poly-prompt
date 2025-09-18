@@ -16,6 +16,20 @@ export default function LoginPage() {
   useEffect(() => {
     setMounted(true);
 
+    // Track login page view
+    const trackLoginView = async () => {
+      try {
+        const { growthos } = await import('../../../growthos/sdk.js')
+        growthos.track('login_page_view', {
+          timestamp: new Date().toISOString()
+        })
+      } catch (error) {
+        console.error('Failed to track login view:', error)
+      }
+    }
+    
+    trackLoginView()
+
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
