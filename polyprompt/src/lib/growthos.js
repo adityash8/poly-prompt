@@ -10,7 +10,7 @@ const VANITY_METRICS = [
   'scroll_depth'
 ];
 
-export const initGrowthOS = (apiKey: string = 'phc_Te80oSaTxThLruEeodFYH9uzlSR8vFkBrMzYPHX4WBz') => {
+export const initGrowthOS = (apiKey = 'phc_Te80oSaTxThLruEeodFYH9uzlSR8vFkBrMzYPHX4WBz') => {
   posthog.init(apiKey, {
     api_host: 'https://eu.posthog.com',
     capture_pageview: false, // We control what gets tracked
@@ -21,7 +21,7 @@ export const initGrowthOS = (apiKey: string = 'phc_Te80oSaTxThLruEeodFYH9uzlSR8v
   trackBusinessEvents();
 
   return {
-    track: (event: string, properties?: any) => {
+    track: (event, properties) => {
       if (VANITY_METRICS.includes(event)) {
         console.warn(`GrowthOS: Rejected vanity metric "${event}"`);
         return;
@@ -30,12 +30,12 @@ export const initGrowthOS = (apiKey: string = 'phc_Te80oSaTxThLruEeodFYH9uzlSR8v
     },
 
     // A/B testing helper
-    getVariant: (experimentKey: string) => {
+    getVariant: (experimentKey) => {
       return posthog.getFeatureFlag(experimentKey);
     },
 
     // Referral tracking
-    trackReferral: (code: string) => {
+    trackReferral: (code) => {
       posthog.capture('referral_click', { referral_code: code });
     }
   };
@@ -72,6 +72,6 @@ function trackBusinessEvents() {
 
 // Export for manual tracking
 export const growthos = {
-  track: (event: string, properties?: any) => posthog.capture(event, properties),
-  identify: (userId: string, traits?: any) => posthog.identify(userId, traits)
+  track: (event, properties) => posthog.capture(event, properties),
+  identify: (userId, traits) => posthog.identify(userId, traits)
 };
