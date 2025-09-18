@@ -19,7 +19,7 @@ export default function LoginPage() {
     // Track login page view
     const trackLoginView = async () => {
       try {
-        const { growthos } = await import('../../../growthos/sdk.js')
+        const { growthos } = await import('@/lib/growthos.js')
         growthos.track('login_page_view', {
           timestamp: new Date().toISOString()
         })

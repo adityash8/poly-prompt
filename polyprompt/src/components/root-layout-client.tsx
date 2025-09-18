@@ -17,7 +17,7 @@ export function RootLayoutClient({ children }: { children: React.ReactNode }) {
     const initAnalytics = async () => {
       try {
         // Import and initialize GrowthOS
-        const { initGrowthOS } = await import('../../growthos/sdk.js')
+        const { initGrowthOS } = await import('@/lib/growthos.js')
         const growthos = initGrowthOS()
         
         // Track app initialization
