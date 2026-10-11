@@ -1,12 +1,29 @@
 # Parent setup for Poly Prompt
 
-Apply backend setup and deploy only after reviewing the implementation. This working branch is uncommitted and has not changed a live service or CI.
+The parent owns production delivery and final live acceptance. Review the implementation and production packaging before deployment.
 
 ## Application root
 
-The Next.js app is `polyprompt/`, not the outer repository package (which only contains Vercel tooling). Either upload/deploy from the already linked nested app directory with RootDirectory `.` or configure the Git project RootDirectory to `polyprompt`. The parent owns linking and any Vercel mutation.
+The Next.js app is `polyprompt/`; the outer repository package contains Vercel tooling. The linked production project's RootDirectory is `polyprompt`. Run its Vercel build and prebuilt deployment from the repository root. The parent owns linking and all Vercel mutations.
 
 The nested `vercel.json` defines one daily `/api/maintenance` cron. Both repository and app `.vercelignore` files exclude all `.env*` files, including `.env.local.before-startup-delivery`. `.gitignore` already excludes that private backup. Do not upload or commit runtime environment files.
+
+## Prebuilt production packaging
+
+Next tracing excludes `**/.env*` for all server routes and the shared server trace. This protects trace manifests; it does not stop the installed Vercel Next builder from independently adding app-root `.env` and `.env.*` files to function `filePathMap` entries. Source `.vercelignore` rules and an ordinary-file-only artifact scan do not clear that prebuilt path.
+
+The parent must build from a clean source staging directory or checkout with no app-root `.env*` files or private backups. Keep project linkage and Vercel-pulled build environment metadata outside `polyprompt/`, managed by the parent. Supply production build/runtime settings through Vercel provisioning; do not copy local runtime files or backups into the build inputs/artifact, create `/vercel/path0`, or edit generated `.vercel/output` maps by hand. Use the already available CLI 63.1.2 for this release; the unversioned repository CLI resolves to an older version.
+
+From that clean repository root, the parent runs:
+
+```sh
+npx --no-install vercel@63.1.2 build --prod
+node polyprompt/tests/prebuilt-artifact-check.cjs .vercel/output polyprompt/.next
+```
+
+The checker must exit 0 with `ok:true`. It inspects all nested `.vc-config.json` maps, symlink paths/targets, ordinary paths, NFT manifests and required-server-file lists. Valid internal function aliases are permitted; private environment references, external/broken links and incomplete/missing metadata fail. Diagnostics contain only counts, never private file contents or metadata values. The equivalent checker command from the app root is `node tests/prebuilt-artifact-check.cjs ../.vercel/output .next`.
+
+Repeat the browser secret-value and fixture-marker scans on this same rebuilt production artifact using the parent's trusted environment context, without copying an environment file into the app. Only after those checks and review pass does the parent run `npx --no-install vercel@63.1.2 deploy --prebuilt --prod` from the clean repository root and perform live acceptance. A local Next trace-only check (`node tests/prebuilt-artifact-check.cjs --next-only .next` from the app) does not clear the Vercel packaging/deployment gate.
 
 ## Shared Supabase database
 
