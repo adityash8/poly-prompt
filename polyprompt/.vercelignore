@@ -1,0 +1,3 @@
+# Never upload runtime credentials or private environment backups.
+.env*
+**/.env*
