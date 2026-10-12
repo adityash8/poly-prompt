@@ -1,16 +1,14 @@
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server';
+import { createServerClient } from '@/lib/supabase-server';
+import { requestOrigin } from '@/lib/http';
 
 export async function GET(request: NextRequest) {
-  const requestUrl = new URL(request.url)
-  const code = requestUrl.searchParams.get('code')
-
-  if (code) {
-    const supabase = createRouteHandlerClient({ cookies })
-    await supabase.auth.exchangeCodeForSession(code)
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const supabase = await createServerClient();
+  if (supabase && code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) return NextResponse.redirect(new URL('/runs', requestOrigin(request)));
   }
-
-  // URL to redirect to after sign in process completes
-  return NextResponse.redirect(`${requestUrl.origin}/runs`)
+  return NextResponse.redirect(new URL('/login?error=callback', requestOrigin(request)));
 }

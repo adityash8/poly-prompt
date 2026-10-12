@@ -1,85 +1,37 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { NextResponse, NextRequest } from "next/server";
-
-export async function GET() {
-  try {
-    // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json({ 
-        error: "Supabase not configured", 
-        message: "Please set up environment variables" 
-      }, { status: 503 });
+import { api, assertSameOrigin, readBody } from '@/lib/http';
+import { requireUser, createServiceClient } from '@/lib/supabase-server';
+import { AppError, validateInput } from '@/lib/validation';
+import { history, insertRun } from '@/lib/repository';
+export async function GET(request: Request) {
+  return api(async () => {
+    const { supabase, user } = await requireUser();
+    const params = new URL(request.url).searchParams;
+    const page = Number(params.get('page') ?? 0);
+    if (!Number.isInteger(page) || page < 0 || page > 10000) throw new AppError(400, 'Invalid history page.');
+    const admin = createServiceClient();
+    if (admin) {
+      const { error } = await admin.rpc('polyprompt_prune_expired_runs', { p_user_id: user.id });
+      if (error) throw new AppError(503, 'History retention needs the supplied Supabase migration.');
     }
-
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data, error } = await supabase
-    .from("runs")
-    .select("*")
-    .eq("user_id", session.user.id)
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error in GET /api/runs:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+    return history(supabase, user.id, page, (params.get('search') ?? '').slice(0, 120));
+  });
 }
-
-export async function POST(request: NextRequest) {
-  try {
-    // Check if Supabase is configured
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-      return NextResponse.json({ 
-        error: "Supabase not configured", 
-        message: "Please set up environment variables" 
-      }, { status: 503 });
-    }
-
-    const supabase = createRouteHandlerClient({ cookies });
-    const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { title, prompt, models } = await request.json();
-
-  if (!prompt || !Array.isArray(models)) {
-    return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  }
-
-  const { data, error } = await supabase
-    .from("runs")
-    .insert({
-      title: title || "Untitled Run",
-      prompt,
-      models,
-      status: "draft",
-      user_id: session.user.id,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json(data);
-  } catch (error) {
-    console.error("Error in POST /api/runs:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+export async function POST(request: Request) {
+  return api(async () => {
+    const { supabase, user } = await requireUser();
+    return insertRun(supabase, user.id, validateInput(await readBody(request)));
+  });
+}
+export async function DELETE(request: Request) {
+  return api(async () => {
+    assertSameOrigin(request);
+    const { supabase, user } = await requireUser();
+    const admin = createServiceClient();
+    if (!admin) throw new AppError(503, 'Cloud deletion needs SUPABASE_SERVICE_ROLE_KEY on the server to remove expired comparisons too.');
+    const { error: retentionError } = await admin.rpc('polyprompt_prune_expired_runs', { p_user_id: user.id });
+    if (retentionError) throw new AppError(503, 'Expired comparisons could not be removed. Check the supplied Supabase schema and retry.');
+    const { error } = await supabase.from('polyprompt_runs').delete().eq('user_id', user.id);
+    if (error) throw new AppError(503, 'Your runs could not be deleted. Please retry.');
+    return { deleted: true };
+  });
 }

@@ -1,82 +1,31 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
-import { NextResponse, NextRequest } from "next/server";
-
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id: runId } = await params;
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { data, error } = await supabase
-    .from("runs")
-    .select("*")
-    .eq("id", runId)
-    .eq("user_id", session.user.id)
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  if (!data) {
-    return NextResponse.json({ error: "Run not found" }, { status: 404 });
-  }
-
-  return NextResponse.json(data);
+import { api, assertSameOrigin, readBody } from '@/lib/http';
+import { requireUser } from '@/lib/supabase-server';
+import { ownedRun } from '@/lib/repository';
+import { AppError } from '@/lib/validation';
+export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return api(async () => { const { supabase, user } = await requireUser(); return ownedRun(supabase, user.id, (await params).id); });
 }
-
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id: runId } = await params;
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const updates = await request.json();
-
-  const { data, error } = await supabase
-    .from("runs")
-    .update({ ...updates, updated_at: new Date().toISOString() })
-    .eq("id", runId)
-    .eq("user_id", session.user.id)
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  if (!data) {
-    return NextResponse.json({ error: "Run not found" }, { status: 404 });
-  }
-
-  return NextResponse.json(data);
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return api(async () => {
+    const { supabase, user } = await requireUser();
+    const run = await ownedRun(supabase, user.id, (await params).id);
+    const body = await readBody(request);
+    if (Object.keys(body).some(key => key !== 'title') || typeof body.title !== 'string' || !body.title.trim() || body.title.length > 120) {
+      throw new AppError(400, 'Only a title of 1 to 120 characters may be changed. Replay to change a prompt or models.');
+    }
+    const { data, error } = await supabase.from('polyprompt_runs').update({ title: body.title.trim() }).eq('id', run.id).eq('user_id', user.id).select().single();
+    if (error) throw new AppError(503, 'Run could not be updated.');
+    return data;
+  });
 }
-
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id: runId } = await params;
-  const supabase = createRouteHandlerClient({ cookies });
-  const { data: { session } } = await supabase.auth.getSession();
-
-  if (!session) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { error } = await supabase
-    .from("runs")
-    .delete()
-    .eq("id", runId)
-    .eq("user_id", session.user.id);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({ message: "Run deleted successfully" });
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  return api(async () => {
+    assertSameOrigin(request);
+    const { supabase, user } = await requireUser();
+    const run = await ownedRun(supabase, user.id, (await params).id);
+    if (run.status === 'running') throw new AppError(409, 'Wait for this run to finish before deleting it.');
+    const { error } = await supabase.from('polyprompt_runs').delete().eq('id', run.id).eq('user_id', user.id);
+    if (error) throw new AppError(503, 'Run could not be deleted.');
+    return { deleted: true };
+  });
 }

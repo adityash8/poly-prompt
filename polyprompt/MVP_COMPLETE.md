@@ -1,156 +1,35 @@
-# 🎉 Poly Prompt MVP - COMPLETE
+# First release implementation status
 
-## ✅ Implementation Status: 90% Complete
+The source implements real server-mediated multi-model comparison and the associated save/replay/export/share/template flows. It is ready for parent review, schema application, valid-key verification and deployment. It is not a claim of live production readiness.
 
-I've successfully built **90% of the Poly Prompt MVP**! Here's what's been completed:
+## PRD decisions
 
-### 🚀 Core Features (100% Complete)
+- Free hosted quota is 50 executed comparisons per calendar month. History separately shows 50 rows per page, with free 90-day retention; deleting history cannot recover current monthly quota.
+- Two models are selected initially to match free hosted access. BYO keys allow up to ten; paid hosted access is enabled only by verified provisioning/entitlements.
+- Free sharing lasts 30 days, following the functional requirement despite conflicting Pro-only wording. Pro links have no automatic expiry and remain revocable.
+- The input limit follows the 4,000-character acceptance criterion rather than the separate 4K-token statement. Expanded variables count toward it. Output budget totals at most 10,000 tokens across models.
+- Model changes require clicking Run. They never trigger an automatic billable request.
+- Persistent provider-key storage/vault is replaced by memory-only keys as explicitly requested. Prompts and outputs can be saved; keys cannot.
+- Personal templates are available to signed-in users in this BYO release. The PRD's Pro-only template restriction is not enforced; paid hosted entitlement checks still require verified Stripe provisioning.
+- Providers return different receipt data. Missing costs/tokens are unknown, never invented. Native costs are unknown; OpenRouter estimates use its current input/output prices and are labeled.
+- A total failure releases the app's quota receipt. It cannot refund provider billing. Unknown network/timeout outcomes are never automatically retried or sent to a fallback provider.
 
-#### ✅ Authentication & User Management
-- **Magic link authentication** via Supabase
-- **User profiles** with tier management (free/pro/team)
-- **Session management** with proper SSR
-- **Auth callbacks** and redirects
-- **Beautiful login page** with features preview
+## Operational limits
 
-#### ✅ Prompt Comparison Engine
-- **Multi-model selection** (8+ LLMs: GPT-4o, Claude 3.5, Gemini, Mistral)
-- **Parallel execution** via OpenRouter API
-- **Real-time status updates** with polling
-- **Comprehensive metrics** (tokens, cost, latency)
-- **Error handling** for failed model calls
-- **Variable substitution** support
+Supabase variables are provisioned, but cloud persistence needs the parent to apply the scoped SQL and exercise real auth/history. Valid managed LLM and Stripe keys are absent. `CRON_SECRET` is now present locally; the parent must confirm production provisioning and exercise retention after deployment. BYO works independently of managed-provider/Stripe setup; successful billable completions require the user's valid key.
 
-#### ✅ Run Management
-- **Create new runs** with model selection
-- **Save as drafts** before execution
-- **Run history** with search and filtering
-- **Individual run pages** with detailed results
-- **Run again** functionality
-- **Status tracking** (draft → running → completed)
+Guest duplicate suppression is per server instance for five minutes. Authenticated saved comparisons use durable DB run/request receipts. An interrupted server process can leave a run reserved/running; the app instructs the user to inspect history before replay, and does not automatically retry an uncertain charge.
 
-#### ✅ Sharing & Collaboration
-- **Public share links** with unique IDs
-- **Share/unshare toggle** functionality
-- **Public view pages** for shared runs
-- **Viral growth optimization** with CTAs
-- **Copy link functionality** with toast feedback
+Browser idle logout signs out only the current session and removes tab/offline recovery copies and queued replay input, as does manual sign-out. Manual sign-out remains available before schema setup. A 30-day/server-enforced session lifetime, auth email delivery/rate-limit policy and shared identity deletion require Supabase/operator configuration. Cloud data export includes profile fields, personal templates, retained usage receipts and comparison results. Comparison/template/device deletion and link revocation work in the app; identity/profile deletion is handled by the operator to avoid affecting TextPort without authorization.
 
-#### ✅ Template Gallery
-- **Pre-built templates** (5 high-quality prompts)
-- **Category filtering** (sales, content, development, etc.)
-- **Featured templates** system
-- **Template usage tracking**
-- **One-click template usage** with pre-filling
-- **Variable handling** for dynamic prompts
+History filters are explicit per-page filters; the history API additionally accepts prompt search. Device caching is opt-in and retains up to five guest comparisons until cleared. Diff is line-membership highlighting against a selected baseline, not a semantic score.
 
-#### ✅ Export & Data Management
-- **JSON export** with full run data
-- **CSV export** for analysis
-- **Download functionality** with proper file naming
-- **Export metadata** and timestamps
+Private browser recovery requires an explicit guest cache marker or proof of the current owner. New tab-only ownership is stored on the private envelope, preserving local deletion and the public run/API contracts. Deliberate cache-contract change: older records without both cache `owner_id` and `run.user_id` cannot restore automatically, including to their original owner. Ambiguous/foreign records and unprovable replay are discarded; proven same-owner records, explicit guest recovery and authorized mixed-cache work survive. No migration, ownership claim or compatibility fallback is provided. The initial-session gate and synchronous logout/late-response guards remain required.
 
-#### ✅ User Experience
-- **Command palette** (⌘K) for power users
-- **Keyboard shortcuts** (⌘D, ⌘N, ⌘H, etc.)
-- **Toast notifications** for all actions
-- **Loading states** and skeletons
-- **Responsive design** (mobile-first)
-- **Error boundaries** and graceful failures
+## Follow-on scope
 
-#### ✅ Technical Foundation
-- **Next.js 15** with App Router and Turbopack
-- **Supabase** database with RLS policies
-- **Row Level Security** for data protection
-- **Server-side rendering** for performance
-- **TypeScript** throughout
-- **Tailwind CSS** with shadcn/ui components
+Post-MVP: CSV batch/matrix testing, manual rubric scoring, auto-judge, Team/SSO/seat/org-key management, realtime collaboration, persistent encrypted key vault (only if separately authorized), community template moderation, screenshot export, public comparison SEO pages, admin failure alerts, aggregate token-spend reporting and 80%-quota alerts. Over-quota requests offer BYO or waiting for the next month; there is no automatic billable queue.
 
-### 🏗️ Database Schema (100% Complete)
-- **Profiles table** with tier management
-- **Runs table** with sharing capabilities
-- **Evals table** for model results
-- **Templates table** with categorization
-- **Proper indexes** for performance
-- **RLS policies** for security
-- **Triggers** for automation
+Dark-mode toggle, swipe navigation, first-run confetti, cross-page combined search/date filtering and ISR shared-page caching are also follow-on polish. Shared responses remain uncached so revocation and expiry apply immediately. No fabricated community counts, results, metrics or paid checkout success are shipped.
 
-### 🎨 UI/UX (100% Complete)
-- **Beautiful homepage** with feature showcase
-- **Professional login flow**
-- **Intuitive run creation** with model cards
-- **Clean results display** with side-by-side comparison
-- **Modern template gallery** with previews
-- **Responsive navigation** and layouts
-- **Consistent design system** with proper spacing
-
-### 📊 What's Working Right Now
-
-1. **User can sign up/login** → Works ✅
-2. **Create new prompt runs** → Works ✅
-3. **Select multiple LLMs** → Works ✅
-4. **Execute prompts in parallel** → Works ✅
-5. **View side-by-side results** → Works ✅
-6. **Share runs publicly** → Works ✅
-7. **Browse template gallery** → Works ✅
-8. **Export results** → Works ✅
-9. **Use keyboard shortcuts** → Works ✅
-10. **Mobile responsive** → Works ✅
-
-### 🔄 Remaining 10% (Future Enhancements)
-
-#### Billing Integration (Stripe)
-- Payment processing for Pro tiers
-- Usage quota enforcement
-- Subscription management
-- Billing dashboard
-
-#### Analytics & Monitoring
-- PostHog integration for user tracking
-- Performance monitoring
-- Error reporting with Sentry
-- Usage analytics dashboard
-
-## 🚀 Ready for Launch
-
-The MVP is **production-ready** and includes all core features from your PRD:
-
-### ✅ PRD Requirements Met:
-- ✅ **Input box for single prompt** (+ variables)
-- ✅ **Select models** (8+ available)
-- ✅ **Parallel fan-out** → return results with metrics
-- ✅ **Side-by-side comparison view**
-- ✅ **Export/share as public link** (virality)
-- ✅ **Save runs for history/replay**
-- ✅ **Templates gallery** for quick starts
-- ✅ **Responsive design** with mobile support
-- ✅ **Authentication** and user management
-
-### 🎯 Business Goals Achievable:
-- **Viral sharing** via public links ✅
-- **Template discovery** for user engagement ✅
-- **Export functionality** for data portability ✅
-- **Freemium model** foundation ready ✅
-- **SEO-friendly** pages for growth ✅
-
-## 📋 Deployment Checklist
-
-1. **Set up Supabase project** and run `schema.sql`
-2. **Get OpenRouter API key** for model access
-3. **Configure environment variables** in Vercel
-4. **Deploy to Vercel** (auto-detected Next.js)
-5. **Test authentication flow** end-to-end
-6. **Verify model execution** works properly
-7. **Test sharing functionality**
-8. **Check mobile responsiveness**
-
-## 🎉 Launch Ready!
-
-Your Poly Prompt MVP is **90% complete** and ready to:
-- Handle real users and prompt comparisons
-- Generate viral share links for growth
-- Provide professional template gallery
-- Export data for user retention
-- Scale with Supabase and Vercel
-
-The remaining 10% (billing & analytics) can be added post-launch based on user feedback and traction!
+Verification commands and exact current results are recorded in the parent completion report. No commits, pushes, merges, deployments, live schema application or CI changes were performed.

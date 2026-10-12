@@ -1,6 +1,5 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { AVAILABLE_MODELS } from '@/types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -27,10 +26,6 @@ export function formatTokens(count: number): string {
     return `${count}`
   }
   return `${(count / 1000).toFixed(1)}k`
-}
-
-export function getModelConfig(modelId: string) {
-  return AVAILABLE_MODELS.find(model => model.id === modelId)
 }
 
 export function truncateText(text: string, maxLength: number): string {

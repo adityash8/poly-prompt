@@ -1,118 +1,20 @@
-'use client'
-
-import { useState, useEffect } from 'react'
-import Link from 'next/link'
-
+'use client';
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { AppNav } from '@/components/app-nav';
+import { fetchJson } from '@/lib/client-api';
+interface Setup { auth: boolean; cloudExecution: boolean; schemaReady: boolean; hosted: boolean; environment: Record<string, boolean> }
 export default function SetupPage() {
-  const [status, setStatus] = useState({
-    supabase: 'checking',
-    openrouter: 'checking'
-  })
-
-  useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        // Check if API routes are working
-        const response = await fetch('/api/runs')
-        if (response.status === 503) {
-          setStatus(prev => ({ ...prev, supabase: 'not-configured' }))
-        } else if (response.status === 401) {
-          setStatus(prev => ({ ...prev, supabase: 'configured' }))
-        } else {
-          setStatus(prev => ({ ...prev, supabase: 'configured' }))
-        }
-      } catch {
-        setStatus(prev => ({ ...prev, supabase: 'error' }))
-      }
-
-      // Check OpenRouter (we can't really test this without making a call)
-      setStatus(prev => ({ ...prev, openrouter: 'unknown' }))
-    }
-
-    checkStatus()
-  }, [])
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'configured': return 'text-green-600 bg-green-100'
-      case 'not-configured': return 'text-yellow-600 bg-yellow-100'
-      case 'error': return 'text-red-600 bg-red-100'
-      default: return 'text-gray-600 bg-gray-100'
-    }
-  }
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'configured': return '✅ Configured'
-      case 'not-configured': return '⚠️ Not Configured'
-      case 'error': return '❌ Error'
-      default: return '🔄 Checking...'
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow p-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">
-            Poly Prompt Setup Status
-          </h1>
-          <p className="text-sm text-gray-500 mb-6">
-            Check the configuration status of your Poly Prompt deployment
-          </p>
-          
-          <div className="space-y-4">
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <h3 className="font-medium text-gray-900">Supabase</h3>
-                <p className="text-sm text-gray-500">Database and authentication</p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status.supabase)}`}>
-                {getStatusText(status.supabase)}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div>
-                <h3 className="font-medium text-gray-900">OpenRouter</h3>
-                <p className="text-sm text-gray-500">LLM API access</p>
-              </div>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(status.openrouter)}`}>
-                {getStatusText(status.openrouter)}
-              </span>
-            </div>
-          </div>
-
-          {status.supabase === 'not-configured' && (
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <h4 className="font-medium text-yellow-800 mb-2">Setup Required</h4>
-              <p className="text-sm text-yellow-700 mb-3">
-                Add these environment variables to your Vercel deployment:
-              </p>
-              <div className="bg-gray-900 text-green-400 p-3 rounded text-sm font-mono">
-                <div>NEXT_PUBLIC_SUPABASE_URL=your_supabase_url</div>
-                <div>NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_key</div>
-                <div>OPENROUTER_API_KEY=your_openrouter_key</div>
-              </div>
-            </div>
-          )}
-
-          <div className="mt-6 flex gap-3">
-            <Link 
-              href="/"
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-            >
-              Back to Home
-            </Link>
-            <Link 
-              href="/runs"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Try App
-            </Link>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
+  const [setup, setSetup] = useState<Setup | null>(null);
+  const [error, setError] = useState('');
+  useEffect(() => { fetchJson<Setup>('/api/setup').then(setSetup).catch(cause => setError(cause.message)); }, []);
+  return <div className="app-shell"><AppNav /><main className="workspace-main settings-main space-y-6">
+    <h1 className="page-title">Setup status</h1><p className="text-muted-foreground">Configuration presence is shown below. A configured value still needs a live authentication or provider test.</p>
+    {error ? <p role="alert">{error}</p> : !setup ? <p role="status">Checking configuration…</p> : <>
+      <section className="surface-panel border rounded-lg p-5 space-y-3"><p>Cloud authentication: {setup.auth ? 'Configured' : 'Needs setup'}</p><p>Cloud execution credentials: {setup.cloudExecution ? 'Configured' : 'Needs setup'}</p><p>PolyPrompt schema query: {setup.schemaReady ? 'Ready' : 'Apply the supplied schema, or check cloud access'}</p><p>Hosted provider access: {setup.hosted ? 'Configured' : 'Use your own key'}</p></section>
+      <section className="surface-panel border rounded-lg p-5"><h2 className="font-semibold mb-3">Environment names and presence</h2><dl className="space-y-2">{Object.entries(setup.environment).map(([name, present]) => <div key={name} className="flex flex-wrap gap-2 justify-between text-sm"><dt className="font-mono break-all">{name}</dt><dd>{present ? 'Present' : 'Absent'}</dd></div>)}</dl></section>
+    </>}
+    <section className="surface-panel border rounded-lg p-5 space-y-3"><h2 className="font-semibold">Operator setup</h2><p className="text-sm text-muted-foreground">Apply supabase/schema.sql. It creates PolyPrompt-scoped tables and leaves other products’ tables intact. Allow this site’s /auth/callback URL in Supabase. Set provider keys only on the server. Set CRON_SECRET to enable daily 90-day free-run retention cleanup.</p><p className="text-sm text-muted-foreground">Use the nested polyprompt directory as the Vercel application root. Billing is available only after real Stripe configuration; no paid plan is activated by this page.</p></section>
+    <Link href="/runs/new" className="primary-button inline-block">Compare using your own key</Link>
+  </main></div>;
 }
