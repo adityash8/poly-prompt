@@ -1,15 +1,20 @@
+'use client';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { Zap } from 'lucide-react';
 
 export function AppNav() {
-  return <nav aria-label="Main navigation" className="bg-white border-b text-gray-900">
-    <div className="max-w-7xl mx-auto px-4 py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
-      <Link href="/" className="font-bold text-lg flex items-center gap-2 mr-auto"><Zap className="h-5 w-5 text-blue-600" />Poly Prompt</Link>
-      <Link className="text-sm hover:text-blue-700" href="/runs/new">Compare</Link>
-      <Link className="text-sm hover:text-blue-700" href="/runs">History</Link>
-      <Link className="text-sm hover:text-blue-700" href="/templates">Templates</Link>
-      <Link className="text-sm hover:text-blue-700" href="/account">Account</Link>
-      <Link className="text-sm hover:text-blue-700" href="/setup">Setup</Link>
+  const pathname = usePathname();
+  return <nav aria-label="Main navigation" className="app-nav">
+    <div className="nav-inner">
+      <Link href="/" className="brand-link"><Zap aria-hidden="true" className="h-5 w-5" />Poly Prompt</Link>
+      <div className="nav-links">
+        <Link aria-current={pathname === '/' || pathname === '/runs/new' ? 'page' : undefined} href="/runs/new">Compare</Link>
+        <Link aria-current={pathname === '/runs' || (pathname.startsWith('/runs/') && pathname !== '/runs/new') ? 'page' : undefined} href="/runs">History</Link>
+        <Link aria-current={pathname === '/templates' ? 'page' : undefined} href="/templates">Templates</Link>
+        <Link aria-current={pathname === '/account' ? 'page' : undefined} href="/account">Account</Link>
+        <Link aria-current={pathname === '/setup' ? 'page' : undefined} href="/setup">Setup</Link>
+      </div>
     </div>
   </nav>;
 }

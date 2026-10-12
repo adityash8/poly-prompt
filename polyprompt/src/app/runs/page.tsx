@@ -37,19 +37,19 @@ export default function RunsPage() {
       if (local.some(item => item.run.id === run.id)) { forget(run.id); setLocal(localHistory()); }
     } catch (cause) { setMessage((cause as Error).message); }
   }
-  return <div className="min-h-screen bg-gray-50 text-gray-900"><AppNav /><main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
-    <header className="flex flex-wrap items-center gap-4"><h1 className="text-2xl font-bold mr-auto">Run history</h1><Link href="/runs/new" className="primary-button">New comparison</Link></header>
-    <p className="text-sm text-gray-600" role="status">{message}</p>
+  return <div className="app-shell"><AppNav /><main className="workspace-main space-y-6">
+    <header className="flex flex-wrap items-center gap-4"><h1 className="page-title mr-auto">Run history</h1><Link href="/runs/new" className="primary-button">New comparison</Link></header>
+    <p className="text-sm text-muted-foreground" role="status">{message}</p>
     <div className="flex flex-wrap gap-3">
       <input aria-label="Search history page" placeholder="Search this page by title or prompt" value={search} onChange={event => setSearch(event.target.value)} className="field sm:flex-1 sm:w-auto" />
       <select aria-label="Filter run status" value={status} onChange={event => setStatus(event.target.value)} className="field sm:w-auto"><option value="all">All statuses</option>{['draft', 'running', 'completed', 'error'].map(value => <option key={value}>{value}</option>)}</select>
       <input type="date" aria-label="Filter run date" value={date} onChange={event => setDate(event.target.value)} className="field sm:w-auto" />
     </div>
-    {loading ? <p role="status">Loading private history…</p> : filtered.length ? <div className="space-y-3">{filtered.map(run => <article key={run.id} className="bg-white border rounded-lg p-5 flex items-start gap-4">
-      <Link href={`/runs/${run.id}`} className="flex-1 min-w-0"><h2 className="font-semibold break-words">{run.title}</h2><p className="text-sm text-gray-500 mt-1">{run.status} · {new Date(run.created_at).toLocaleString()} · {run.models.length} models · {local.some(item => item.run.id === run.id) ? 'In this tab' : 'Cloud'}</p><p className="text-sm text-gray-600 line-clamp-2 mt-3 break-words">{run.prompt}</p></Link>
-      <button className="text-sm text-red-700 shrink-0" onClick={() => remove(run)}>Delete</button>
-    </article>)}</div> : <div className="bg-white border rounded-lg p-8"><h2 className="font-semibold">No comparisons match this view.</h2><p className="text-gray-600 mt-2">Run a prompt to start a history, or change your filters.</p></div>}
+    {loading ? <p role="status">Loading private history…</p> : filtered.length ? <div className="space-y-3">{filtered.map(run => <article key={run.id} className="surface-panel border rounded-lg p-5 flex items-start gap-4">
+      <Link href={`/runs/${run.id}`} className="flex-1 min-w-0"><h2 className="font-semibold break-words">{run.title}</h2><p className="text-sm text-muted-foreground mt-1">{run.status} · {new Date(run.created_at).toLocaleString()} · {run.models.length} models · {local.some(item => item.run.id === run.id) ? 'In this tab' : 'Cloud'}</p><p className="text-sm text-muted-foreground line-clamp-2 mt-3 break-words">{run.prompt}</p></Link>
+      <button className="text-sm text-error shrink-0" onClick={() => remove(run)}>Delete</button>
+    </article>)}</div> : <div className="surface-panel border rounded-lg p-8"><h2 className="font-semibold">No comparisons match this view.</h2><p className="text-muted-foreground mt-2">Run a prompt to start a history, or change your filters.</p></div>}
     {total > 50 && <div className="flex items-center gap-4"><button className="secondary-button" disabled={page === 0} onClick={() => setPage(current => current - 1)}>Previous</button><span className="text-sm">Page {page + 1} of {Math.ceil(total / 50)}</span><button className="secondary-button" disabled={(page + 1) * 50 >= total} onClick={() => setPage(current => current + 1)}>Next</button></div>}
-    <Link className="text-sm text-blue-700 underline inline-block" href="/account">Export all cloud comparisons or clear your data</Link>
+    <Link className="text-sm text-link underline inline-block" href="/account">Export all cloud comparisons or clear your data</Link>
   </main></div>;
 }

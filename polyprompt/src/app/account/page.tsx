@@ -42,21 +42,21 @@ export default function AccountPage() {
     if (client) { const { error } = await client.auth.signOut({ scope: 'local' }); if (error) { setError('Sign-out failed. Please retry.'); return; } }
     router.push('/'); router.refresh();
   }
-  return <div className="min-h-screen bg-gray-50 text-gray-900"><AppNav /><main className="max-w-3xl mx-auto p-4 sm:p-8 space-y-6">
-    <h1 className="text-2xl font-bold">Account and privacy</h1>
-    {error && <p className="text-sm text-red-800 bg-red-50 rounded-lg p-4" role="alert">{error} <Link className="underline" href="/login">Sign in</Link></p>}
-    {notice && <p className="text-sm text-blue-800" role="status">{notice}</p>}
-    {account && <section className="bg-white border rounded-lg p-5 space-y-3"><h2 className="font-semibold">{account.tier} account</h2><p className="text-sm">Hosted executions this calendar month: {account.used}{account.limit === null ? '' : ` / ${account.limit}`}. A failed-model retry shares the original quota receipt. Comparisons using your own key do not spend hosted quota.</p><p className="text-sm text-gray-600">{account.billingAvailable ? 'Manage subscriptions and invoices through Stripe. Entitlements change only after a verified webhook.' : 'Paid upgrades need Stripe provisioning. No checkout is available yet.'}</p>{account.billingAvailable && <button className="primary-button" disabled={billingBusy} onClick={() => billing(account.tier !== 'free')}>{billingBusy ? 'Opening Stripe…' : account.tier === 'free' ? 'Upgrade through Stripe' : 'Manage billing and invoices'}</button>}
+  return <div className="app-shell"><AppNav /><main className="workspace-main settings-main space-y-6">
+    <h1 className="page-title">Account and privacy</h1>
+    {error && <p className="text-sm text-error bg-error-surface rounded-lg p-4" role="alert">{error} <Link className="underline" href="/login">Sign in</Link></p>}
+    {notice && <p className="text-sm text-info" role="status">{notice}</p>}
+    {account && <section className="surface-panel border rounded-lg p-5 space-y-3"><h2 className="font-semibold">{account.tier} account</h2><p className="text-sm">Hosted executions this calendar month: {account.used}{account.limit === null ? '' : ` / ${account.limit}`}. A failed-model retry shares the original quota receipt. Comparisons using your own key do not spend hosted quota.</p><p className="text-sm text-muted-foreground">{account.billingAvailable ? 'Manage subscriptions and invoices through Stripe. Entitlements change only after a verified webhook.' : 'Paid upgrades need Stripe provisioning. No checkout is available yet.'}</p>{account.billingAvailable && <button className="primary-button" disabled={billingBusy} onClick={() => billing(account.tier !== 'free')}>{billingBusy ? 'Opening Stripe…' : account.tier === 'free' ? 'Upgrade through Stripe' : 'Manage billing and invoices'}</button>}
       </section>}
     {signedIn && <button className="secondary-button" onClick={signOut}>Sign out</button>}
-    <section className="bg-white border rounded-lg p-5 space-y-4"><h2 className="font-semibold">Your comparison data</h2><p className="text-sm text-gray-600">Guest results stay in this browser tab. If you opt in, the last five are also kept on this device. Provider keys are kept only in memory. Free cloud runs are retained for 90 days; shared links expire after 30 days and can be revoked.</p>
-      <p className="text-sm text-gray-600">Your cloud export includes comparisons, personal templates, profile fields, and retained quota receipts. Delete personal templates from the gallery. Account and profile deletion is handled by the site operator because sign-in may be shared with other products.</p>
-      <div className="flex flex-wrap gap-3"><button className="secondary-button" disabled={!account} onClick={exportCloud}>Export cloud data</button><button className="secondary-button" disabled={!account} onClick={clearCloud}>Delete all cloud comparisons</button>
-        <button className="secondary-button" onClick={() => {
+    <section className="surface-panel border rounded-lg p-5 space-y-4"><h2 className="font-semibold">Your comparison data</h2><p className="text-sm text-muted-foreground">Guest results stay in this browser tab. If you opt in, the last five are also kept on this device. Provider keys are kept only in memory. Free cloud runs are retained for 90 days; shared links expire after 30 days and can be revoked.</p>
+      <p className="text-sm text-muted-foreground">Your cloud export includes comparisons, personal templates, profile fields, and retained quota receipts. Delete personal templates from the gallery. Account and profile deletion is handled by the site operator because sign-in may be shared with other products.</p>
+      <div className="flex flex-wrap gap-3"><button className="secondary-button" disabled={!account} onClick={exportCloud}>Export cloud data</button><button className="secondary-button destructive-button" disabled={!account} onClick={clearCloud}>Delete all cloud comparisons</button>
+        <button className="secondary-button destructive-button" onClick={() => {
           try { forget(); setOfflineEnabled(false); setNotice('Tab history and the offline result cache were erased.'); }
           catch { setError('Browser storage could not be cleared. Clear this site’s storage in your browser settings.'); }
         }}>Clear device history</button></div>
     </section>
-    <section className="bg-white border rounded-lg p-5 space-y-3"><h2 className="font-semibold">Tracking consent</h2><p className="text-sm text-gray-600">Optional analytics are off until you opt in. Use the privacy controls below to change that choice. Prompts, outputs, provider keys, and email addresses are excluded from analytics.</p></section>
+    <section className="surface-panel border rounded-lg p-5 space-y-3"><h2 className="font-semibold">Tracking consent</h2><p className="text-sm text-muted-foreground">Optional analytics are off until you opt in. Use the privacy controls below to change that choice. Prompts, outputs, provider keys, and email addresses are excluded from analytics.</p></section>
   </main></div>;
 }

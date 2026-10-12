@@ -44,6 +44,7 @@ export function createClient() {
   } };
 }
 export function useRouter() { return { push: (path: string) => paths.push(path), refresh: () => {} }; }
+export function usePathname() { return window.location.pathname; }
 export function useParams() { return { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' }; }
 export default function Link({ href, children, ...props }: React.AnchorHTMLAttributes<HTMLAnchorElement>) {
   return <a href={href} {...props}>{children}</a>;

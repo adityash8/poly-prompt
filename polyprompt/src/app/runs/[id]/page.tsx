@@ -33,8 +33,8 @@ export default function RunDetailPage() {
     if (!local || local.run.user_id) refresh();
     return () => { cancelled = true; clearTimeout(timer); };
   }, [id]);
-  return <div className="min-h-screen bg-gray-50 text-gray-900"><AppNav /><main className="max-w-7xl mx-auto p-4 sm:p-8">
-    <h1 className="text-2xl font-bold mb-6">Saved comparison</h1>
-    {data ? <><ComparisonEditor key={`${id}:${data.run.status}:${data.run.updated_at}`} initialComparison={data} />{error && <p role="alert" className="mt-4 text-red-800">{error}</p>}</> : error ? <div role="alert" className="bg-white border rounded-lg p-6"><p>{error}</p><Link href="/runs" className="text-blue-700 underline mt-3 inline-block">Back to history</Link></div> : <p role="status">Loading your comparison…</p>}
+  return <div className="app-shell"><AppNav /><main className="workspace-main">
+    <h1 className="page-title mb-6">Saved comparison</h1>
+    {data ? <><ComparisonEditor key={`${id}:${data.run.status}:${data.run.updated_at}`} initialComparison={data} />{error && <p role="alert" className="mt-4 text-error">{error}</p>}</> : error ? <div role="alert" className="surface-panel border rounded-lg p-6"><p>{error}</p><Link href="/runs" className="text-link underline mt-3 inline-block">Back to history</Link></div> : <p role="status">Loading your comparison…</p>}
   </main></div>;
 }

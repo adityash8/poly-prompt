@@ -20,12 +20,12 @@ export default function SharedRunPage() {
     }).catch(cause => { if (!cancelled) setError(cause.message); });
     return () => { cancelled = true; };
   }, [shareId]);
-  return <div className="min-h-screen bg-gray-50 text-gray-900"><AppNav /><main className="max-w-7xl mx-auto p-4 sm:p-8 space-y-6">
-    <h1 className="text-2xl font-bold">Shared comparison</h1>
-    <p className="text-sm text-gray-600">Read-only public results. You can export a copy or start a new comparison.</p>
-    {error ? <p role="alert" className="bg-white border rounded-lg p-6">{error}</p> : !data ? <p role="status">Loading shared results…</p> : <>
-      <section className="bg-white border rounded-lg p-5 space-y-4"><h2 className="font-semibold">{data.run.title}</h2><pre className="font-sans text-sm whitespace-pre-wrap break-words">{data.run.resolved_prompt || data.run.prompt}</pre>
-        {data.run.share_expires_at && <p className="text-xs text-gray-500">Expires {new Date(data.run.share_expires_at).toLocaleDateString()}</p>}
+  return <div className="app-shell"><AppNav /><main className="workspace-main space-y-6">
+    <h1 className="page-title">Shared comparison</h1>
+    <p className="text-sm text-muted-foreground">Read-only public results. You can export a copy or start a new comparison.</p>
+    {error ? <p role="alert" className="surface-panel border rounded-lg p-6">{error}</p> : !data ? <p role="status">Loading shared results…</p> : <>
+      <section className="surface-panel border rounded-lg p-5 space-y-4"><h2 className="font-semibold">{data.run.title}</h2><pre className="font-sans text-sm whitespace-pre-wrap break-words">{data.run.resolved_prompt || data.run.prompt}</pre>
+        {data.run.share_expires_at && <p className="text-xs text-muted-foreground">Expires {new Date(data.run.share_expires_at).toLocaleDateString()}</p>}
         <div className="flex flex-wrap gap-3"><button className="secondary-button" onClick={() => downloadComparison(data, 'json')}>Export JSON</button><button className="secondary-button" onClick={() => downloadComparison(data, 'csv')}>Export CSV</button>
           <button className="primary-button" onClick={() => { prepareReplay(data.run); router.push('/runs/new'); }}>Try this prompt</button></div>
       </section><ComparisonResults results={data.results} />
